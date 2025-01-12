@@ -10,6 +10,7 @@
 1. Clone the repository.
 2. Install dependencies from `requirements.txt`.
 3. Configure environment variables with API keys for Zapier, Gmail, and Google Drive.
-4. Follow the Zapier setup instructions to link the app to Slack and Gmail.
+4. Replace the Webhook URL with the correct URL
+5. Follow the Zapier setup instructions to link the app to Slack and Gmail.
 
 For detailed steps, see the documentation included in the repository.
