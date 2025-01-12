@@ -8,7 +8,7 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-WEBHOOK_URL = "https://hooks.zapier.com/hooks/catch/21224512/2z8ra5a/"
+WEBHOOK_URL = "WEBHOOK_URL"
 
 @app.route('/')
 def index():
