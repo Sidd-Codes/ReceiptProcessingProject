@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capture Receipt and Submit</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      padding: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background-color: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    h1 { font-size: 24px; color: #333; margin-bottom: 20px; }
+    video, img { width: 100%; max-width: 640px; height: auto; max-height: 480px; }
+    .button-container { margin-top: 20px; }
+    button, input[type="text"], input[type="email"] {
+      padding: 10px;
+      font-size: 16px;
+      margin: 10px 0;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      width: 80%;
+      max-width: 300px;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      cursor: pointer;
+      width: auto;
+      min-width: 150px;
+    }
+    button:hover { background-color: #218838; }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
+    .status { margin-top: 20px; font-size: 18px; font-weight: bold; }
+    .error { color: red; }
+    .info { color: #666; font-size: 14px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Capture Receipt and Submit</h1>
+    <video id="video" autoplay></video>
+    <div id="preview"></div>
+    <input type="text" id="submitter" placeholder="Enter name" required>
+    <input type="text" id="slackUserId" placeholder="Enter Slack User ID (optional)">
+    <input type="email" id="email" placeholder="Enter Email (optional)">
+    <p class="info">Please provide Slack User ID or Email if you would like to receive a notification</p>
+    <div class="button-container">
+      <button id="captureButton">Capture Image</button>
+      <button id="submitButton" disabled>Submit</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const captureButton = document.getElementById('captureButton');
+    const submitButton = document.getElementById('submitButton');
+    const submitterInput = document.getElementById('submitter');
+    const slackUserIdInput = document.getElementById('slackUserId');
+    const emailInput = document.getElementById('email');
+    const previewDiv = document.getElementById('preview');
+    const statusDiv = document.getElementById('status');
+
+    // Start video stream
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => video.srcObject = stream)
+      .catch(err => alert('Unable to access webcam'));
+
+    // Capture the image
+    captureButton.addEventListener('click', () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      previewDiv.innerHTML = `<img src="${canvas.toDataURL('image/png')}" alt="Captured Image">`;
+      submitButton.disabled = false;
+    });
+
+    // Submit image and user data
+    submitButton.addEventListener('click', async () => {
+      const name = submitterInput.value.trim();
+      const slackId = slackUserIdInput.value.trim();
+      const email = emailInput.value.trim();
+
+      if (!name) {
+        return alert('Please enter your name');
+      }
+
+      const imageData = document.querySelector('img').src;
+
+      try {
+        const response = await fetch('/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image: imageData,
+            submitter: name,
+            slackUserId: slackId || null,
+            email: email || null
+          })
+        });
+
+        const result = await response.json();
+        if (response.ok) {
+          statusDiv.textContent = 'Successfully submitted!';
+          statusDiv.classList.remove('error');
+          // Clear form
+          submitterInput.value = '';
+          slackUserIdInput.value = '';
+          emailInput.value = '';
+          previewDiv.innerHTML = '';
+          submitButton.disabled = true;
+        } else {
+          statusDiv.textContent = `Error: ${result.error || 'Unknown error'}`;
+          statusDiv.classList.add('error');
+        }
+      } catch (error) {
+        statusDiv.textContent = 'Submission failed. Please try again.';
+        statusDiv.classList.add('error');
+      }
+    });
+  </script>
+</body>
+</html>
